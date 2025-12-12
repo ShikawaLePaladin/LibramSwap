@@ -72,6 +72,55 @@ After installation, type `/ss` to open the menu.
 3. Click **"Remove"**
 4. The spell disappears from the configuration
 
+## ⚠️ Important - Macro Requirements
+
+**For proper functionality, you MUST use macros for the following spells:**
+
+The addon needs the **exact spell rank** to work correctly. Create macros for these spells:
+
+### Required Macros
+
+**Holy Strike:**
+```
+#showtooltip Holy Strike
+/cast Holy Strike(Rank X)
+```
+
+**Holy Shield:**
+```
+#showtooltip Holy Shield
+/cast Holy Shield(Rank X)
+```
+
+**Consecration:**
+```
+#showtooltip Consecration
+/cast Consecration(Rank X)
+```
+
+**Flash of Light:**
+```
+#showtooltip Flash of Light
+/cast Flash of Light(Rank X)
+```
+
+**Holy Light:**
+```
+#showtooltip Holy Light
+/cast Holy Light(Rank X)
+```
+
+> **Note**: Replace `Rank X` with your actual spell rank (e.g., `Rank 5`, `Rank 6`, etc.)
+
+### Why Macros Are Needed
+
+The game client doesn't always provide the spell rank when you cast directly from your action bar. Using macros ensures ShikaSwap can:
+- Identify the exact spell being cast
+- Equip the correct libram before casting
+- Work reliably in all situations
+
+**Without macros**, these spells may not trigger the libram swap!
+
 ## 🔧 Advanced Options
 
 ### Swap Delay
