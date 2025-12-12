@@ -304,7 +304,7 @@ Frame:SetScript("OnEvent", function(self, event, ...)
                     end
                 end
                 -- Always show confirmation when profile is auto-loaded (visible to user)
-                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Profile '"..tostring(pname).."' loaded at login.|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Profile '"..tostring(pname).."' loaded at login.|r")
             end
         end
         -- If there's a non-profile saved map (last-used choices), merge only the user's selections
@@ -375,7 +375,7 @@ Frame:SetScript("OnUpdate", function(_, elapsed)
                 end
             end
             SavedMapBackup = deepCopy(cur)
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Detected external change to saved map; restored user selections.|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Detected external change to saved map; restored user selections.|r")
         else
             -- update our backup to match current if nothing to restore
             SavedMapBackup = deepCopy(cur)

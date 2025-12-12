@@ -1,88 +1,90 @@
-# LibramSwap - Addon WoW Vanilla/Turtle
+# ShikaSwap - WoW Vanilla/Turtle Addon
 
-**LibramSwap** est un addon pour World of Warcraft 1.12 (Vanilla/Turtle WoW) qui équipe automatiquement le bon libram quand vous lancez des sorts de Paladin.
+**ShikaSwap** is an addon for World of Warcraft 1.12 (Vanilla/Turtle WoW) that automatically equips the correct libram when you cast Paladin spells.
 
-## 📋 Fonctionnalités
+> **Note**: This is a modified version of the original LibramSwap addon by Theo. I've rebuilt and enhanced it with my own features and improvements.
 
-- ✅ **Changement automatique de libram** avant de lancer un sort
-- ✅ **Système de profils** pour sauvegarder différentes configurations
-- ✅ **Gestion des sorts** via le Sorts Manager (Add/Remove)
-- ✅ **Indicateurs visuels** (vert = libram dans les sacs, rouge = manquant)
-- ✅ **Chargement automatique** du dernier profil utilisé à la connexion
-- ✅ **Interface intuitive** avec dropdowns et checkboxes
+## 📋 Features
+
+- ✅ **Automatic libram swapping** before casting spells
+- ✅ **Profile system** to save different configurations
+- ✅ **Spell management** via Sorts Manager (Add/Remove)
+- ✅ **Visual indicators** (green = libram in bags, red = missing)
+- ✅ **Auto-load** last used profile on login
+- ✅ **Intuitive interface** with dropdowns and checkboxes
 
 ## 🎮 Installation
 
-1. Téléchargez l'addon (bouton vert "Code" → "Download ZIP")
-2. Extrayez le dossier `Libramswap-main`
-3. Renommez-le en `LibramSwap`
-4. Placez-le dans : `World of Warcraft/Interface/AddOns/LibramSwap`
-5. Redémarrez WoW ou tapez `/reload` en jeu
+1. Download the addon (green "Code" button → "Download ZIP")
+2. Extract the `Libramswap-main` folder
+3. Rename it to `LibramSwap`
+4. Place it in: `World of Warcraft/Interface/AddOns/LibramSwap`
+5. Restart WoW or type `/reload` in-game
 
-## ⌨️ Commandes
+## ⌨️ Commands
 
-| Commande | Description |
-|----------|-------------|
-| `/libramconfig` | Ouvre/ferme le menu de configuration |
-| `/libramswap` | Active/désactive l'addon |
-| `/libramprofile` | Affiche le profil actuellement actif |
-| `/libramdebug on/off` | Active/désactive les messages de debug |
-| `/swaplibram <Sort>` | Test manuel du swap pour un sort |
-| `/equiplibram <Nom>` | Équipe un libram manuellement |
+| Command | Description |
+|---------|-------------|
+| `/ss` | Open/close the configuration menu |
+| `/shikaswap` | Toggle addon on/off |
+| `/ssikaprofile` | Show currently active profile |
+| `/ssikadebug on/off` | Enable/disable debug messages |
+| `/swaplibram <Spell>` | Manual swap test for a spell |
+| `/equiplibram <Name>` | Manually equip a libram |
 
-## 📖 Guide d'utilisation
+## 📖 Usage Guide
 
-### 1️⃣ Premier lancement
+### 1️⃣ First Launch
 
-Après installation, tapez `/libramconfig` pour ouvrir le menu.
+After installation, type `/ss` to open the menu.
 
-### 2️⃣ Ajouter des sorts à configurer
+### 2️⃣ Add Spells to Configure
 
-1. Cliquez sur le bouton **"Sorts"** (en haut à droite)
-2. Recherchez un sort dans la liste (ex: "Holy Light")
-3. Cliquez sur **"Add"** pour l'ajouter à votre configuration
-4. Répétez pour tous vos sorts importants
+1. Click the **"Sorts"** button (top right)
+2. Search for a spell in the list (e.g., "Holy Light")
+3. Click **"Add"** to add it to your configuration
+4. Repeat for all your important spells
 
-### 3️⃣ Choisir les librams
+### 3️⃣ Choose Librams
 
-1. Dans la configuration principale, cliquez sur le bouton à côté du nom du sort
-2. Sélectionnez le libram que vous voulez équiper pour ce sort
-3. L'indicateur devient **vert** si vous avez le libram dans vos sacs
+1. In the main configuration, click the button next to the spell name
+2. Select the libram you want to equip for that spell
+3. The indicator turns **green** if you have the libram in your bags
 
-### 4️⃣ Sauvegarder un profil
+### 4️⃣ Save a Profile
 
-1. Cliquez sur **"Save"** (en haut à droite)
-2. Tapez un nom de profil (ex: "Heal", "Tank", "PvP")
-3. Cliquez **"Create"** ou **"Save"**
-4. Votre configuration est maintenant sauvegardée !
+1. Click **"Save"** (top right)
+2. Enter a profile name (e.g., "Heal", "Tank", "PvP")
+3. Click **"Create"** or **"Save"**
+4. Your configuration is now saved!
 
-### 5️⃣ Charger un profil
+### 5️⃣ Load a Profile
 
-1. Cliquez sur **"Save"** pour ouvrir le gestionnaire de profils
-2. Cliquez sur un profil dans la liste
-3. Cliquez **"Load"**
-4. Le profil se charge automatiquement à la prochaine connexion
+1. Click **"Save"** to open the profile manager
+2. Click on a profile in the list
+3. Click **"Load"**
+4. The profile will auto-load on next login
 
-### 6️⃣ Supprimer des sorts
+### 6️⃣ Remove Spells
 
-1. Cliquez sur **"Sorts"**
-2. Trouvez le sort à supprimer
-3. Cliquez sur **"Remove"**
-4. Le sort disparaît de la configuration
+1. Click **"Sorts"**
+2. Find the spell to remove
+3. Click **"Remove"**
+4. The spell disappears from the configuration
 
-## 🔧 Options avancées
+## 🔧 Advanced Options
 
-### Délai de swap
-- Ajustez le délai entre le changement de libram et le lancement du sort
-- Valeur recommandée : **0.02 secondes**
+### Swap Delay
+- Adjust the delay between libram swap and spell cast
+- Recommended value: **0.02 seconds**
 
 ### Debug
-- Activez pour voir tous les messages détaillés dans le chat
-- Utile pour diagnostiquer les problèmes
+- Enable to see all detailed messages in chat
+- Useful for troubleshooting
 
-## 🎯 Sorts supportés
+## 🎯 Supported Spells
 
-L'addon supporte tous les sorts de Paladin, notamment :
+The addon supports all Paladin spells, including:
 - Holy Light / Flash of Light
 - Holy Shield / Holy Strike
 - Consecration
@@ -93,7 +95,7 @@ L'addon supporte tous les sorts de Paladin, notamment :
 - Hand of Freedom
 - Hammer of Justice
 
-## 📦 Librams supportés
+## 📦 Supported Librams
 
 - Libram of the Faithful
 - Libram of the Farraki Zealot
@@ -113,45 +115,52 @@ L'addon supporte tous les sorts de Paladin, notamment :
 
 ## ❓ FAQ
 
-**Q : L'addon ne charge pas mes librams à la connexion ?**  
-R : Assurez-vous d'avoir cliqué "Save" après avoir configuré vos sorts. Le profil doit être sauvegardé pour se charger automatiquement.
+**Q: The addon doesn't load my librams on login?**  
+A: Make sure you clicked "Save" after configuring your spells. The profile must be saved to auto-load.
 
-**Q : Les dropdowns sont vides après `/reload` ?**  
-R : Cela signifie que le profil a été créé avant d'avoir configuré les librams. Configurez vos sorts, puis cliquez "Save" pour écraser le profil.
+**Q: Dropdowns are empty after `/reload`?**  
+A: This means the profile was created before configuring librams. Configure your spells, then click "Save" to overwrite the profile.
 
-**Q : Comment savoir quel profil est actif ?**  
-R : Tapez `/libramprofile` pour voir le profil actif et le nombre de sorts configurés.
+**Q: How do I know which profile is active?**  
+A: Type `/ssikaprofile` to see the active profile and number of configured spells.
 
-**Q : L'addon ne swap pas en combat ?**  
-R : Par sécurité, l'addon ne swap pas si votre curseur a un objet, ou si une fenêtre de transaction est ouverte.
+**Q: The addon doesn't swap in combat?**  
+A: For safety, the addon won't swap if your cursor has an item or a transaction window is open.
 
-**Q : Comment créer plusieurs profils (Heal/Tank/PvP) ?**  
-R : Configurez vos sorts pour un rôle, sauvegardez le profil avec un nom (ex: "Heal"). Changez la configuration, sauvegardez avec un autre nom (ex: "Tank"). Chargez le profil voulu selon la situation.
+**Q: How do I create multiple profiles (Heal/Tank/PvP)?**  
+A: Configure spells for one role, save the profile with a name (e.g., "Heal"). Change configuration, save with another name (e.g., "Tank"). Load the desired profile as needed.
 
-## 🐛 Problèmes connus
+## 🐛 Known Issues
 
-- Le swap peut échouer si vous spammez le sort trop rapidement (utilisez le délai)
-- Certains librams nécessitent un nom exact (sensible à la casse)
+- Swap may fail if you spam the spell too quickly (use the delay setting)
+- Some librams require exact name matching (case-sensitive)
 
-## 👨‍💻 Développement
+## 👨‍💻 Development
 
-Ce projet est open-source. Les contributions sont les bienvenues !
+This project is open-source. Contributions are welcome!
 
-### Structure des fichiers
-- `LibramSwap_fixed.lua` : Logique principale du swap
-- `LibramSwapConfig.lua` : Interface utilisateur (Configuration, Profils, Sorts Manager)
-- `LibramSwap.toc` : Manifeste de l'addon
+### File Structure
+- `LibramSwap_fixed.lua` : Main swap logic
+- `LibramSwapConfig.lua` : User interface (Configuration, Profiles, Sorts Manager)
+- `LibramSwap.toc` : Addon manifest
 
-## 📜 Licence
+## 📜 Credits
 
-Libre d'utilisation et de modification.
+- **Original LibramSwap**: Created by Theo
+- **ShikaSwap**: Modified and enhanced by Shikawa
 
-## 🙏 Remerciements
+This version is a complete overhaul of the original addon with new features, improved UI, and a robust profile system.
 
-Merci à la communauté Turtle WoW pour leurs retours et suggestions !
+## 📜 License
+
+Free to use and modify.
+
+## 🙏 Acknowledgments
+
+Thanks to the Turtle WoW community for their feedback and suggestions!
 
 ---
 
 **Version** : 1.0  
-**Auteur** : Theo  
-**Compatibilité** : WoW 1.12 (Vanilla) / Turtle WoW
+**Author** : Shikawa (based on LibramSwap by Theo)  
+**Compatibility** : WoW 1.12 (Vanilla) / Turtle WoW

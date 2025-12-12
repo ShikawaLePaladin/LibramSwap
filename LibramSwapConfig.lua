@@ -1,9 +1,9 @@
 if not DEFAULT_CHAT_FRAME or not CreateFrame or not SlashCmdList then
     return
 else
-    SLASH_LIBRAMCONFIG1 = "/libramconfig"
-    SLASH_LIBRAMCONFIG2 = "/libramswapconfig"
-    SLASH_LIBRAMDEBUG1 = "/libramdebug"
+    SLASH_SHIKASWAPCONFIG1 = "/ss"
+    SLASH_SHIKASWAPCONFIG2 = "/shikaconfig"
+    SLASH_SSIKADEBUG1 = "/ssikadebug"
 
     -- disable chat traces by default; enable for debugging
     local DEBUG = (type(LibramSwapDB) == "table" and LibramSwapDB.debug) or false
@@ -18,7 +18,7 @@ else
             if type(v) ~= "table" then
                 if v ~= nil then
                     LibramSwapDB._broken_fields[field] = v
-                    if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Found corrupted top-level field '"..tostring(field).."' ("..type(v).."). Moving to _broken_fields and replacing.|r") end
+                    if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Found corrupted top-level field '"..tostring(field).."' ("..type(v).."). Moving to _broken_fields and replacing.|r") end
                 end
                 LibramSwapDB[field] = {}
             end
@@ -79,7 +79,7 @@ else
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     title:SetPoint("TOP", header, "TOP", 0, -14)
-    title:SetText("LibramSwap — Configuration")
+    title:SetText("ShikaSwap — Configuration")
     title:SetTextColor(0.6, 0.9, 1.0)
 
     -- Active profile label (shows the profile the addon will load)
@@ -165,24 +165,24 @@ else
         if arg == "on" or arg == "1" or arg == "true" then
             LibramSwapDB.debug = true
             if type(debugChk) == "table" and type(debugChk.SetChecked) == "function" then debugChk:SetChecked(true) end
-            DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Debug enabled.|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Debug enabled.|r")
         elseif arg == "off" or arg == "0" or arg == "false" then
             LibramSwapDB.debug = false
             if type(debugChk) == "table" and type(debugChk.SetChecked) == "function" then debugChk:SetChecked(false) end
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF8888[LibramSwap]: Debug disabled.|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF8888[ShikaSwap]: Debug disabled.|r")
         else
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[LibramSwap]: Usage: /libramdebug on|off|1|0|true|false|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[ShikaSwap]: Usage: /libramdebug on|off|1|0|true|false|r")
         end
     end
 
     -- Slash command to check which profile is currently active
-    SlashCmdList["LIBRAMPROFILE"] = function()
+    SlashCmdList["SSIKAPROFILE"] = function()
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         local current = LibramSwapDB.selectedProfile or LibramSwapDB.lastUsedProfile or "None"
         local spellCount = (type(LibramSwapDB.spells) == "table") and table.getn(LibramSwapDB.spells) or 0
-        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Active profile: '"..tostring(current).."' ("..tostring(spellCount).." spells)|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Active profile: '"..tostring(current).."' ("..tostring(spellCount).." spells)|r")
     end
-    SLASH_LIBRAMPROFILE1 = "/libramprofile"
+    SLASH_SSIKAPROFILE1 = "/ssikaprofile"
 
     -- consecration label removed (visual cleanup)
 
@@ -251,16 +251,16 @@ else
             if type(LibramSwap_ApplySelection) == "function" then
                 local ok, err = pcall(LibramSwap_ApplySelection, spell, (sel == "None") and nil or sel)
                 if ok then
-                    DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Selection saved for '"..tostring(spell).."' -> '"..tostring(sel).."'.|r")
+                    DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Selection saved for '"..tostring(spell).."' -> '"..tostring(sel).."'.|r")
                 else
-                    DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error saving selection: "..tostring(err).."|r")
+                    DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error saving selection: "..tostring(err).."|r")
                 end
             else
                 -- Fallback: persist only the single key to savedvariables (do not overwrite the whole map)
                 LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
                 LibramSwapDB.map = (type(LibramSwapDB.map) == "table") and LibramSwapDB.map or {}
                 LibramSwapDB.map[spell] = (sel == "None") and "__NONE__" or sel
-                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Selection saved for '"..tostring(spell).."' -> '"..tostring(sel).."'. (fallback)|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Selection saved for '"..tostring(spell).."' -> '"..tostring(sel).."'. (fallback)|r")
             end
             local bbtn = dropdowns and dropdowns[spell]
             if bbtn and bbtn.text then bbtn.text:SetText("  " .. (sel or "None")) end
@@ -359,7 +359,7 @@ else
         if type(LibramSwapDB.profiles) ~= "table" then
             if LibramSwapDB.profiles ~= nil then
                 LibramSwapDB._broken_fields.profiles = LibramSwapDB.profiles
-                if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Detected corrupted top-level 'profiles' ("..type(LibramSwapDB.profiles).."). Moved to _broken_fields.profiles and replaced.|r") end
+                if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Detected corrupted top-level 'profiles' ("..type(LibramSwapDB.profiles).."). Moved to _broken_fields.profiles and replaced.|r") end
             end
             LibramSwapDB.profiles = {}
             return
@@ -384,14 +384,14 @@ else
             end
         end)
         if not ok then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error iterating profiles: "..tostring(err).." — resetting profiles storage.|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error iterating profiles: "..tostring(err).." — resetting profiles storage.|r") end
             LibramSwapDB._broken_fields.profiles_iter_error = tostring(err)
             LibramSwapDB.profiles = {}
             return
         end
 
         if removed > 0 then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Moved " .. tostring(removed) .. " corrupted profile(s) to _broken_profiles.|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Moved " .. tostring(removed) .. " corrupted profile(s) to _broken_profiles.|r") end
         end
     end
 
@@ -431,7 +431,7 @@ else
 
     local pfTitle = profileFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     pfTitle:SetPoint("TOP", profileFrame, "TOP", 0, -10)
-    pfTitle:SetText("LibramSwap Profiles")
+    pfTitle:SetText("ShikaSwap Profiles")
 
     local nameLabel = profileFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameLabel:SetPoint("TOPLEFT", profileFrame, "TOPLEFT", 12, -40)
@@ -514,9 +514,9 @@ else
 
     renameBtn:SetScript("OnClick", function()
         local newName = safeGetName()
-        if not newName or newName == "" then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Enter a new profile name to rename.|r") end return end
-        if not selectedProfile or selectedProfile == "" then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: No profile selected to rename.|r") end return end
-        if newName == selectedProfile then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: New name is the same as the current name.|r") end return end
+        if not newName or newName == "" then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Enter a new profile name to rename.|r") end return end
+        if not selectedProfile or selectedProfile == "" then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: No profile selected to rename.|r") end return end
+        if newName == selectedProfile then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: New name is the same as the current name.|r") end return end
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         LibramSwapDB.profiles = (type(LibramSwapDB.profiles) == "table") and LibramSwapDB.profiles or {}
         if LibramSwapDB.profiles[newName] then
@@ -531,7 +531,7 @@ else
         LibramSwapDB.lastUsedProfile = newName
         pcall(function() setProfileName("") end)
         refreshProfiles()
-        if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Renamed profile to '"..tostring(newName).."'.|r") end
+        if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Renamed profile to '"..tostring(newName).."'.|r") end
     end)
 
     -- list of existing profiles (simple scroll area)
@@ -607,7 +607,7 @@ else
             pContent:SetHeight(math.max(120, (table.getn(profileButtons) * 20) + 8))
         end)
         if not ok then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error refreshing profiles: "..tostring(err).." — clearing profile list to avoid crash.|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error refreshing profiles: "..tostring(err).." — clearing profile list to avoid crash.|r") end
             LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
             LibramSwapDB._broken_fields = LibramSwapDB._broken_fields or {}
             LibramSwapDB._broken_fields.profiles_refresh_error = tostring(err)
@@ -631,7 +631,7 @@ else
         if not name or name == "" then return end
         -- sanitize and coerce savedvariables before touching them
         local okSan, sanErr = pcall(sanitizeProfiles)
-        if not okSan then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: sanitizeProfiles failed: "..tostring(sanErr).."|r") end end
+        if not okSan then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: sanitizeProfiles failed: "..tostring(sanErr).."|r") end end
         local db = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         -- coerce primary tables to safe defaults
         if type(db.profiles) ~= "table" then db.profiles = {} end
@@ -696,7 +696,7 @@ else
         LibramSwapDB.lastUsedProfile = name
         if type(GetTime) == "function" then LibramSwapDB.lastUsedTime = GetTime() end
         -- Always show save confirmation to user
-        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Profile '"..tostring(name).."' saved successfully.|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Profile '"..tostring(name).."' saved successfully.|r")
         -- refresh UI list
         refreshProfiles()
     end
@@ -731,7 +731,7 @@ else
             end
             local ok, err = pcall(safeSaveProfile, name)
             if not ok then
-                if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Failed to create profile: "..tostring(err).."|r") end
+                if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Failed to create profile: "..tostring(err).."|r") end
                 return
             end
             -- populate the name box for user clarity and refresh list
@@ -749,7 +749,7 @@ else
             -- update highlights
             for _, b in ipairs(profileButtons) do if b.hl then b.hl:Hide() end end
             if profileButtonsByName and profileButtonsByName[name] and profileButtonsByName[name].hl then profileButtonsByName[name].hl:Show() end
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Created profile '"..tostring(name).."'|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Created profile '"..tostring(name).."'|r") end
             -- persist this profile as the last-used profile
             LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
             LibramSwapDB.selectedProfile = name
@@ -764,7 +764,7 @@ else
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         local payload = (type(LibramSwapDB) == "table" and type(LibramSwapDB.profiles) == "table") and LibramSwapDB.profiles[name] or nil
         if not payload or type(payload) ~= "table" then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Profile '" .. tostring(name) .. "' is invalid or missing.|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Profile '" .. tostring(name) .. "' is invalid or missing.|r") end
             return
         end
         -- Validate payload subfields to avoid indexing non-table values
@@ -806,7 +806,7 @@ else
         LibramSwapDB.selectedProfile = name
         LibramSwapDB.lastUsedProfile = name
         if type(GetTime) == "function" then LibramSwapDB.lastUsedTime = GetTime() end
-        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Profile '"..tostring(name).."' loaded.|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Profile '"..tostring(name).."' loaded.|r")
         pcall(updateActiveProfileLabel)
         pcall(rebuildSpellList)
         if frame and frame.Hide and frame.Show then frame:Hide(); frame:Show() end
@@ -846,7 +846,7 @@ else
         LibramSwapDB = db
         -- refresh UI lists and spell list
         if type(DEFAULT_CHAT_FRAME) == "table" and type(DEFAULT_CHAT_FRAME.AddMessage) == "function" then
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Profile '"..tostring(name).."' deleted successfully.|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Profile '"..tostring(name).."' deleted successfully.|r")
         end
         pcall(refreshProfiles)
         pcall(rebuildSpellList)
@@ -865,20 +865,20 @@ else
         end)
         if (not name or name == "") and selectedProfile then name = selectedProfile end
         if not name or name == "" then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Please enter a profile name before saving.|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Please enter a profile name before saving.|r") end
             return
         end
         -- Ensure savedvariables are in sane state before saving
         local okPrep, prepErr = pcall(sanitizeProfiles)
-        if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error preparing profiles: "..tostring(prepErr).."|r") end end
+        if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error preparing profiles: "..tostring(prepErr).."|r") end end
 
         local ok, err = pcall(safeSaveProfile, name)
         if not ok then
-            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Failed to save profile: "..tostring(err).."|r") end
+            if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Failed to save profile: "..tostring(err).."|r") end
             return
         end
         -- Provide clear confirmation and update UI list immediately
-        if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Profile saved: '"..tostring(name).."'|r") end
+        if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Profile saved: '"..tostring(name).."'|r") end
         -- persist selectedProfile so it is restored after reload
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         LibramSwapDB.selectedProfile = name
@@ -894,9 +894,9 @@ else
         if (not n or n == "") and selectedProfile then n = selectedProfile end
         if n ~= "" then
             local okPrep, prepErr = pcall(sanitizeProfiles)
-            if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error preparing profile load: " .. tostring(prepErr) .. "|r") end end
+            if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error preparing profile load: " .. tostring(prepErr) .. "|r") end end
             local ok, err = pcall(loadProfile, n)
-            if not ok then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error loading profile: " .. tostring(err) .. "|r") end end
+            if not ok then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error loading profile: " .. tostring(err) .. "|r") end end
         end
     end)
 
@@ -905,9 +905,9 @@ else
         if (not n or n == "") and selectedProfile then n = selectedProfile end
         if n ~= "" then
             local okPrep, prepErr = pcall(sanitizeProfiles)
-            if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error preparing profile delete: " .. tostring(prepErr) .. "|r") end end
+            if not okPrep then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error preparing profile delete: " .. tostring(prepErr) .. "|r") end end
             local ok, err = pcall(deleteProfile, n)
-            if not ok then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[LibramSwap]: Error deleting profile: " .. tostring(err) .. "|r") end end
+            if not ok then if DEBUG then DEFAULT_CHAT_FRAME:AddMessage("|cFFFF5555[ShikaSwap]: Error deleting profile: " .. tostring(err) .. "|r") end end
         end
     end)
 
@@ -969,7 +969,7 @@ else
             LibramSwapDB = db
             LibramSwapDB.profiles = db.profiles
             if type(DEFAULT_CHAT_FRAME) == "table" and type(DEFAULT_CHAT_FRAME.AddMessage) == "function" then
-                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: Profile '"..tostring(name).."' deleted successfully.|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: Profile '"..tostring(name).."' deleted successfully.|r")
             end
             pcall(refreshProfiles)
             pcall(rebuildSpellList)
@@ -1017,7 +1017,7 @@ else
 
     local sfTitle = sortsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     sfTitle:SetPoint("TOP", sortsFrame, "TOP", 0, -10)
-    sfTitle:SetText("LibramSwap — Sorts Manager")
+    sfTitle:SetText("ShikaSwap — Sorts Manager")
     sfTitle:SetTextColor(1.0, 0.82, 0)
 
     local searchLabel = sortsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1078,7 +1078,7 @@ else
                         -- Also set to disabled/hidden in Configuration
                         LibramSwapDB.enabledMap[n] = false
                         if type(DEFAULT_CHAT_FRAME) == "table" and type(DEFAULT_CHAT_FRAME.AddMessage) == "function" then
-                            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[LibramSwap]: '"..tostring(n).."' removed from Configuration|r")
+                            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFAA00[ShikaSwap]: '"..tostring(n).."' removed from Configuration|r")
                         end
                     else
                         -- Add to spell list
@@ -1086,7 +1086,7 @@ else
                         -- Enable in Configuration
                         LibramSwapDB.enabledMap[n] = true
                         if type(DEFAULT_CHAT_FRAME) == "table" and type(DEFAULT_CHAT_FRAME.AddMessage) == "function" then
-                            DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: '"..tostring(n).."' added to Configuration|r")
+                            DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: '"..tostring(n).."' added to Configuration|r")
                         end
                     end
                     
@@ -1329,12 +1329,12 @@ else
                 if cnt ~= 1 then pname = nil end
             end
             if pname and type(LibramSwapDB.profiles) == "table" and type(LibramSwapDB.profiles[pname]) == "table" then
-                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[LibramSwap]: Auto-loading profile '"..tostring(pname).."'...|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Auto-loading profile '"..tostring(pname).."'...|r")
                 pcall(loadProfile, pname)
                 pcall(rebuildSpellList)
             end
         end
     end)
 
-    SlashCmdList["LIBRAMCONFIG"] = function() if frame:IsShown() then frame:Hide() else frame:Show() end end
+    SlashCmdList["SHIKASWAPCONFIG"] = function() if frame:IsShown() then frame:Hide() else frame:Show() end end
 end

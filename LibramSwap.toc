@@ -1,7 +1,7 @@
 ## Interface: 11200
-## Title: LibramSwap
-## Notes: Swaps to correct libram before casting Paladin spells
-## Author: Theo
+## Title: ShikaSwap
+## Notes: Automatically swaps to the correct libram before casting Paladin spells
+## Author: Shikawa (based on LibramSwap by Theo)
 ## SavedVariables: LibramSwapDB
 LibramSwap_fixed.lua
 LibramSwapConfig.lua
