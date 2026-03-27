@@ -1,1 +1,10 @@
-.github/
+# Ignore everything by default
+*
+**/
+
+# But keep these files
+!.gitignore
+!LibramSwap.toc
+!LibramSwapConfig.lua
+!LibramSwap_fixed.lua
+!README.md
