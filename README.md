@@ -14,6 +14,14 @@
 - ✅ **Auto-load** last used profile on login
 - ✅ **Intuitive interface** with dropdowns and checkboxes
 
+## 🔄 Patch Status
+
+This addon has been modified recently due to a patch and behavior updates.
+
+- Some options are still under active testing
+- Combat timing behavior can vary depending on latency and client state
+- Future updates may adjust combat-related toggles for better reliability
+
 ## 🎮 Installation
 
 1. Download the addon (green "Code" button → "Download ZIP")
@@ -131,6 +139,11 @@ The game client doesn't always provide the spell rank when you cast directly fro
 - In combat, if the libram swap and cast cannot happen safely in the same instant, ShikaSwap queues a short deferred cast
 - This helps the spell fire right after swap/GCD timing without requiring extra key presses
 
+### Try same-tick (Experimental)
+- The **Try same-tick** option is currently experimental
+- It is not fully reliable yet and may fail in some combat situations
+- If you encounter unstable behavior, disable this option and use standard deferred casting
+
 ### Debug
 - Enable it from the configuration window to see detailed messages in chat
 - Useful for troubleshooting
@@ -187,6 +200,7 @@ A: Configure spells for one role, save the profile with a name (e.g., "Heal"). C
 
 - Swap may fail if you spam the spell too quickly (use the delay setting)
 - Some librams require exact name matching (case-sensitive)
+- **Try same-tick** is not fully functional yet and is still being tested
 
 ## 👨‍💻 Development
 
