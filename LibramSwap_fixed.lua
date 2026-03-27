@@ -13,6 +13,13 @@ local function LogDebug(msg)
     end
 end
 
+local function IsPlayerInCombat()
+    if type(UnitAffectingCombat) == "function" then
+        return UnitAffectingCombat("player") and true or false
+    end
+    return false
+end
+
 local NameIndex = {}
 local IdIndex = {}
 local lastSwapTime = 0
@@ -31,6 +38,10 @@ LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
 LibramSwapDB.map = (type(LibramSwapDB.map) == "table") and LibramSwapDB.map or {}
 -- default to enabled unless explicitly disabled by user
 if LibramSwapDB.enabled == nil then LibramSwapDB.enabled = true end
+if LibramSwapDB.useDelay == nil then LibramSwapDB.useDelay = true end
+if LibramSwapDB.combatSmartMode == nil then LibramSwapDB.combatSmartMode = true end
+if LibramSwapDB.combatSameTickAttempt == nil then LibramSwapDB.combatSameTickAttempt = true end
+if LibramSwapDB.combatEquipRetry == nil then LibramSwapDB.combatEquipRetry = true end
 
 local function deepCopy(src)
     if type(src) ~= "table" then return src end
@@ -43,6 +54,12 @@ end
 local SavedMapBackup = {}
 local watchdog_acc = 0
 local WATCHDOG_INTERVAL = 10 -- seconds between checks
+local Original_CastSpellByName = nil
+local Orig_CastSpell = nil
+
+local PendingCast = nil
+local PENDING_CHECK_INTERVAL = 0.02
+local PENDING_EQUIP_RETRY_INTERVAL = 0.12
 
 local function mapsEqual(a,b)
     if a == b then return true end
@@ -54,6 +71,68 @@ local function mapsEqual(a,b)
         if a[k] ~= v then return false end
     end
     return true
+end
+
+local function IsLibramEquipped(itemName)
+    if not itemName then return false end
+    local slotChecks = {16, 17, 18}
+    for _, s in ipairs(slotChecks) do
+        local equipped = GetInventoryItemLink("player", s)
+        if equipped and string_find(equipped, itemName, 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function GetConfiguredDelay()
+    if type(LibramSwapDB) == "table" and LibramSwapDB.useDelay == false then
+        return 0.01
+    end
+    local d = 0.02
+    if type(LibramSwapDB) == "table" and type(LibramSwapDB.delay) == "number" and LibramSwapDB.delay > 0 then
+        d = LibramSwapDB.delay
+    end
+    if d < 0.01 then d = 0.01 end
+    return d
+end
+
+local function IsCombatSmartModeEnabled()
+    return not (type(LibramSwapDB) == "table" and LibramSwapDB.combatSmartMode == false)
+end
+
+local function IsCombatSameTickEnabled()
+    return not (type(LibramSwapDB) == "table" and LibramSwapDB.combatSameTickAttempt == false)
+end
+
+local function IsCombatEquipRetryEnabled()
+    return not (type(LibramSwapDB) == "table" and LibramSwapDB.combatEquipRetry == false)
+end
+
+local function GetPendingMaxWait()
+    -- Keep delayed casting reactive while still tolerant to higher latency.
+    local d = GetConfiguredDelay()
+    local maxWait = d * 24
+    if maxWait < 0.6 then maxWait = 0.6 end
+    if maxWait > 2.2 then maxWait = 2.2 end
+    return maxWait
+end
+
+local function ScheduleDeferredCast(kind, arg1, arg2, readySpec, requiredLibram, spellLabel)
+    local now = GetTime()
+    local delay = GetConfiguredDelay()
+    PendingCast = {
+        kind = kind,
+        arg1 = arg1,
+        arg2 = arg2,
+        readySpec = readySpec,
+        requiredLibram = requiredLibram,
+        spellLabel = spellLabel,
+        lastEquipRetry = 0,
+        startedAt = now,
+        executeAt = now + delay,
+    }
+    LogDebug("Deferred cast scheduled kind='"..tostring(kind).."' readySpec='"..tostring(readySpec).."' requiredLibram='"..tostring(requiredLibram).."' spell='"..tostring(spellLabel).."' delay="..tostring(delay))
 end
 
 -- Start with an empty runtime mapping. User selections (from savedvariables)
@@ -162,7 +241,7 @@ local function ResolveLibramForSpell(spellName)
         local choice = LibramMap["Consecration"]
         -- Treat any legacy/undesired 'Auto' marker as no selection so the user must choose explicitly
         if type(choice) == "string" and string.lower(choice) == "auto" then choice = nil end
-        if choice and HasItemInBags(choice) then return choice end
+        if choice and (HasItemInBags(choice) or IsLibramEquipped(choice)) then return choice end
         return nil
     end
     local libram = LibramMap[spellName]
@@ -172,12 +251,12 @@ local function ResolveLibramForSpell(spellName)
     end
     if libram == "None" then return nil end
     if spellName == "Flash of Light" then
-        if not HasItemInBags("Libram of Light") and HasItemInBags("Libram of Divinity") then
+        if (not HasItemInBags("Libram of Light")) and (not IsLibramEquipped("Libram of Light")) and (HasItemInBags("Libram of Divinity") or IsLibramEquipped("Libram of Divinity")) then
             libram = "Libram of Divinity"
         end
     end
     -- ensure the user-selected libram is present in bags before returning it; avoids attempted equips that will fail
-    if HasItemInBags(libram) then
+    if HasItemInBags(libram) or IsLibramEquipped(libram) then
         LogDebug("Resolved libram '"..tostring(libram).."' for spell '"..tostring(spellName).."'")
         return libram
     else
@@ -188,12 +267,13 @@ end
 
 local function EquipLibramForSpell(spellName, itemName)
     if not itemName then return false end
-    LogDebug("EquipLibramForSpell called for spell='"..tostring(spellName).."' item='"..tostring(itemName).."'")
+    LogDebug("EquipLibramForSpell called for spell='"..tostring(spellName).."' item='"..tostring(itemName).."' inCombat="..tostring(IsPlayerInCombat()))
     -- check common equipment slots (main/off/ranged) to avoid re-equipping
     local slotChecks = {16, 17, 18}
     for _, s in ipairs(slotChecks) do
         local equipped = GetInventoryItemLink("player", s)
         if equipped and string_find(equipped, itemName, 1, true) then
+            LogDebug("Equip skipped: item already equipped in slot "..tostring(s))
             return false
         end
     end
@@ -204,7 +284,24 @@ local function EquipLibramForSpell(spellName, itemName)
     local bag, slot = HasItemInBags(itemName)
     if bag and slot then
         LogDebug("Found '"..tostring(itemName).."' in bag="..tostring(bag).." slot="..tostring(slot).."; attempting UseContainerItem()")
+        local before = nil
+        do
+            local eq = GetInventoryItemLink("player", 18)
+            if eq then
+                local _, _, nm = string_find(eq, "%[(.-)%]")
+                before = nm or eq
+            end
+        end
         UseContainerItem(bag, slot)
+        local after = nil
+        do
+            local eq = GetInventoryItemLink("player", 18)
+            if eq then
+                local _, _, nm = string_find(eq, "%[(.-)%]")
+                after = nm or eq
+            end
+        end
+        LogDebug("Post-UseContainerItem ranged-slot before='"..tostring(before).."' after='"..tostring(after).."'")
         return true
     end
     LogDebug("Item '"..tostring(itemName).."' not found in bags when equipping for '"..tostring(spellName).."'.")
@@ -347,6 +444,49 @@ end)
 Frame:RegisterEvent("PLAYER_LOGIN")
 local last_update = 0
 Frame:SetScript("OnUpdate", function(_, elapsed)
+    if PendingCast then
+        local now = GetTime()
+        if now >= (PendingCast.executeAt or 0) then
+            local readySpec = PendingCast.readySpec
+            local requiredLibram = PendingCast.requiredLibram
+            local spellLabel = PendingCast.spellLabel or readySpec or "(unknown)"
+            local startedAt = PendingCast.startedAt or now
+            local maxWait = GetPendingMaxWait()
+            if requiredLibram and not IsLibramEquipped(requiredLibram) and (now - startedAt) < maxWait then
+                if IsCombatEquipRetryEnabled() and (now - (PendingCast.lastEquipRetry or 0)) >= PENDING_EQUIP_RETRY_INTERVAL then
+                    PendingCast.lastEquipRetry = now
+                    LogDebug("Deferred cast: retry equip for spell='"..tostring(spellLabel).."' libram='"..tostring(requiredLibram).."'")
+                    EquipLibramForSpell(spellLabel, requiredLibram)
+                end
+                PendingCast.executeAt = now + PENDING_CHECK_INTERVAL
+                return
+            end
+            if readySpec and not IsSpellReady(readySpec) and (now - startedAt) < maxWait then
+                PendingCast.executeAt = now + PENDING_CHECK_INTERVAL
+                return
+            end
+
+            if requiredLibram and not IsLibramEquipped(requiredLibram) then
+                LogDebug("Deferred cast: timeout reached without confirmed equip; casting anyway for spell='"..tostring(spellLabel).."'")
+            end
+
+            local kind = PendingCast.kind
+            local arg1 = PendingCast.arg1
+            local arg2 = PendingCast.arg2
+            PendingCast = nil
+
+            if kind == "byname" and Original_CastSpellByName then
+                LogDebug("Executing deferred CastSpellByName spell='"..tostring(arg1).."'")
+                Original_CastSpellByName(arg1, arg2)
+            elseif kind == "byindex" and Orig_CastSpell then
+                LogDebug("Executing deferred CastSpell index="..tostring(arg1))
+                Orig_CastSpell(arg1, arg2)
+            else
+                LogDebug("Deferred cast dropped: original cast function unavailable.")
+            end
+        end
+    end
+
     watchdog_acc = watchdog_acc + (elapsed or 0)
     if watchdog_acc < WATCHDOG_INTERVAL then return end
     watchdog_acc = 0
@@ -383,39 +523,94 @@ Frame:SetScript("OnUpdate", function(_, elapsed)
     end
 end)
 
-local Original_CastSpellByName = CastSpellByName
+Original_CastSpellByName = CastSpellByName
 function CastSpellByName(spellName, bookType)
     if LibramSwapDB.enabled then
         local base = SplitNameAndRank(spellName)
+        local inCombat = IsPlayerInCombat()
+        LogDebug("CastSpellByName intercepted spell='"..tostring(spellName).."' base='"..tostring(base).."' inCombat="..tostring(inCombat))
         local libram = ResolveLibramForSpell(base)
-        if libram and IsSpellReady(spellName) then
+        local ready = libram and IsSpellReady(spellName)
+        LogDebug("CastSpellByName resolution libram='"..tostring(libram).."' ready="..tostring(ready))
+        if ready then
+            if inCombat and IsLibramEquipped(libram) then
+                LogDebug("Combat smart mode: target libram already equipped, casting immediately.")
+                return Original_CastSpellByName(spellName, bookType)
+            end
+
+            local swapPerformed = false
             if base == "Judgement" then
                 local hp = (UnitExists("target") and UnitHealth("target") and UnitHealthMax("target") and (UnitHealth("target")/UnitHealthMax("target")*100)) or nil
-                if hp and hp <= 35 then EquipLibramForSpell(base, libram) end
+                if hp and hp <= 35 and not IsLibramEquipped(libram) then
+                    swapPerformed = EquipLibramForSpell(base, libram)
+                end
             else
                 local ok = EquipLibramForSpell(base, libram)
+                swapPerformed = ok and true or false
                 if not ok then LogDebug("Failed to equip libram '"..tostring(libram).."' for spell '"..tostring(base).."'.") end
+            end
+
+            if inCombat and swapPerformed and IsCombatSmartModeEnabled() then
+                -- Experimental path: if equip+ready are visible in the same tick, try immediate cast.
+                if IsCombatSameTickEnabled() and IsLibramEquipped(libram) and IsSpellReady(spellName) then
+                    LogDebug("Combat smart mode: same-tick conditions met, trying immediate cast for spell='"..tostring(spellName).."'")
+                    return Original_CastSpellByName(spellName, bookType)
+                end
+
+                LogDebug("Combat smart mode: swap done, scheduling auto-cast for spell='"..tostring(spellName).."'")
+                ScheduleDeferredCast("byname", spellName, bookType, spellName, libram, base)
+                return true
+            end
+
+            if inCombat and (not IsCombatSmartModeEnabled()) then
+                LogDebug("Combat smart mode disabled: forwarding immediate cast.")
             end
         end
     end
+    LogDebug("Forwarding CastSpellByName to original spell='"..tostring(spellName).."'")
     return Original_CastSpellByName(spellName, bookType)
 end
 
-local Orig_CastSpell = CastSpell
+Orig_CastSpell = CastSpell
 function CastSpell(spellIndex, bookType)
     -- treat nil bookType as spellbook usage (some clients call CastSpell(index) without bookType)
     if LibramSwapDB.enabled and (bookType == nil or bookType == BOOKTYPE_SPELL) then
         local name, rank = GetSpellName(spellIndex, BOOKTYPE_SPELL)
         if name then
+            local inCombat = IsPlayerInCombat()
+            LogDebug("CastSpell intercepted index="..tostring(spellIndex).." name='"..tostring(name).."' rank='"..tostring(rank).."' inCombat="..tostring(inCombat))
             local libram = ResolveLibramForSpell(name)
             if libram then
                 local spec = (rank and rank ~= "") and (name .. "(" .. rank .. ")") or name
-                    if IsSpellReady(spec) then
-                        local ok = EquipLibramForSpell(name, libram)
-                        if not ok then LogDebug("Failed to equip libram '"..tostring(libram).."' for spell '"..tostring(name).."' (book cast).") end
+                local ready = IsSpellReady(spec)
+                LogDebug("CastSpell resolution libram='"..tostring(libram).."' spec='"..tostring(spec).."' ready="..tostring(ready))
+                if ready then
+                    if inCombat and IsLibramEquipped(libram) then
+                        LogDebug("Combat smart mode: target libram already equipped (book cast), casting immediately.")
+                        return Orig_CastSpell(spellIndex, bookType)
                     end
+
+                    local ok = EquipLibramForSpell(name, libram)
+                    if not ok then LogDebug("Failed to equip libram '"..tostring(libram).."' for spell '"..tostring(name).."' (book cast).") end
+
+                    if inCombat and ok and IsCombatSmartModeEnabled() then
+                        if IsCombatSameTickEnabled() and IsLibramEquipped(libram) and IsSpellReady(spec) then
+                            LogDebug("Combat smart mode: same-tick conditions met (book cast), trying immediate cast index="..tostring(spellIndex))
+                            return Orig_CastSpell(spellIndex, bookType)
+                        end
+
+                        LogDebug("Combat smart mode: swap done, scheduling auto-cast for index="..tostring(spellIndex))
+                        ScheduleDeferredCast("byindex", spellIndex, bookType, spec, libram, name)
+                        return true
+                    end
+
+                    if inCombat and (not IsCombatSmartModeEnabled()) then
+                        LogDebug("Combat smart mode disabled (book cast): forwarding immediate cast.")
+                    end
+                end
             end
         end
     end
+    LogDebug("Forwarding CastSpell to original index="..tostring(spellIndex))
     return Orig_CastSpell(spellIndex, bookType)
 end

@@ -4,6 +4,7 @@ else
     SLASH_SHIKASWAPCONFIG1 = "/ss"
     SLASH_SHIKASWAPCONFIG2 = "/shikaconfig"
     SLASH_SSIKADEBUG1 = "/ssikadebug"
+    SLASH_SSIKASCALE1 = "/ssscale"
 
     -- disable chat traces by default; enable for debugging
     local DEBUG = (type(LibramSwapDB) == "table" and LibramSwapDB.debug) or false
@@ -34,13 +35,38 @@ else
         for k,v in pairs(src) do out[k] = deepCopy(v) end
         return out
     end
+
+    local applyUiScale
+    local uiScaleSlider
+
+    local function AttachResizeHandle(target, minW, minH, maxW, maxH)
+        if not target then return end
+        target:SetResizable(true)
+        if target.SetMinResize then target:SetMinResize(minW or 420, minH or 300) end
+        if target.SetMaxResize and maxW and maxH then target:SetMaxResize(maxW, maxH) end
+
+        local handle = CreateFrame("Button", nil, target)
+        handle:SetWidth(16)
+        handle:SetHeight(16)
+        handle:SetPoint("BOTTOMRIGHT", target, "BOTTOMRIGHT", -4, 4)
+        handle:EnableMouse(true)
+        local tex = handle:CreateTexture(nil, "OVERLAY")
+        tex:SetAllPoints()
+        tex:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+        handle:SetScript("OnMouseDown", function()
+            if target.StartSizing then target:StartSizing("BOTTOMRIGHT") end
+        end)
+        handle:SetScript("OnMouseUp", function()
+            if target.StopMovingOrSizing then target:StopMovingOrSizing() end
+        end)
+    end
     -- Larger frame for better ergonomics, positioned top-center and clamped to screen
-    frame:SetWidth(720)
-    frame:SetHeight(540)
+    frame:SetWidth(700)
+    frame:SetHeight(510)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)
     frame:SetClampedToScreen(true)
     frame:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 16, insets = {left=6,right=6,top=6,bottom=6}})
-    frame:SetBackdropColor(0,0,0,0.85)
+    frame:SetBackdropColor(0.03, 0.03, 0.08, 0.92)
     frame:EnableMouse(true)
     frame:SetMovable(true)
     frame:RegisterForDrag("LeftButton")
@@ -48,12 +74,20 @@ else
     -- across clients that do not pass the frame as the first argument.
     frame:SetScript("OnDragStart", function() frame:StartMoving() end)
     frame:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
+    AttachResizeHandle(frame, 680, 460, 1180, 900)
     frame:Hide()
+
+    local controlsPanel = CreateFrame("Frame", nil, frame)
+    controlsPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -34)
+    controlsPanel:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -34)
+    controlsPanel:SetHeight(98)
+    controlsPanel:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 8, insets = {left=3,right=3,top=3,bottom=3}})
+    controlsPanel:SetBackdropColor(0.05, 0.05, 0.15, 0.72)
 
     -- Scrollable area for the spell list
     local scroll = CreateFrame("ScrollFrame", "LibramSwap_ScrollFrame", frame, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -96)
-    scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -36, 12)
+    scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -130)
+    scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 12)
     local content = CreateFrame("Frame", "LibramSwap_ScrollChild", scroll)
     -- adjust content width to fit frame and leave space for indicators
     content:SetWidth(520)
@@ -74,18 +108,18 @@ else
     local header = frame:CreateTexture(nil, "ARTWORK")
     header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
     header:SetPoint("TOP", frame, "TOP", 0, 16)
-    header:SetWidth(720)
+    header:SetWidth(700)
     header:SetHeight(64)
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     title:SetPoint("TOP", header, "TOP", 0, -14)
     title:SetText("ShikaSwap — Configuration")
-    title:SetTextColor(0.6, 0.9, 1.0)
+    title:SetTextColor(1.0, 0.85, 0.10)
 
     -- Active profile label (shows the profile the addon will load)
     local activeProfileLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     activeProfileLabel:SetPoint("TOP", title, "BOTTOM", 0, -4)
-    activeProfileLabel:SetTextColor(0.9, 0.9, 0.6)
+    activeProfileLabel:SetTextColor(0.40, 0.95, 0.75)
     activeProfileLabel:SetText("Active profile: None")
 
     -- Profile button removed per user request
@@ -104,7 +138,7 @@ else
     -- Main quick Save and Sorts buttons (top-right, side-by-side)
     local mainSortBtn = CreateFrame("Button", "LibramSwap_SortsBtn", frame, "UIPanelButtonTemplate")
     mainSortBtn:SetWidth(72); mainSortBtn:SetHeight(20)
-    mainSortBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -36, -36)
+    mainSortBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -12)
     mainSortBtn:SetText("Sorts")
 
     local mainSaveBtn = CreateFrame("Button", "LibramSwap_MainSaveBtn", frame, "UIPanelButtonTemplate")
@@ -115,13 +149,14 @@ else
     -- Consecration controls removed (visual cleanup requested)
 
     local delayLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    delayLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -44)
+    delayLabel:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 12, -14)
     delayLabel:SetText("Delay (seconds):")
+    delayLabel:SetTextColor(1.0, 0.82, 0)
 
     local delayBox = CreateFrame("EditBox", "LibramSwap_DelayBox", frame, "InputBoxTemplate")
     delayBox:SetWidth(64)
     delayBox:SetHeight(20)
-    delayBox:SetPoint("LEFT", delayLabel, "RIGHT", 12, 0)
+    delayBox:SetPoint("LEFT", delayLabel, "RIGHT", 8, 0)
     delayBox:SetAutoFocus(false)
     delayBox:SetText(tostring(((type(LibramSwapDB) == "table") and LibramSwapDB.delay) or 0.02))
     delayBox:SetScript("OnEnterPressed", function()
@@ -132,6 +167,134 @@ else
         local v = tonumber(delayBox:GetText())
         if v then LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}; LibramSwapDB.delay = v end
     end)
+
+    local uiScaleLabel = controlsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    uiScaleLabel:SetPoint("RIGHT", controlsPanel, "RIGHT", -210, -14)
+    uiScaleLabel:SetText("UI scale")
+    uiScaleLabel:SetTextColor(0.55, 0.80, 1.0)
+
+    uiScaleSlider = CreateFrame("Frame", "LibramSwap_UIScaleSlider", controlsPanel)
+    uiScaleSlider:SetWidth(118)
+    uiScaleSlider:SetHeight(12)
+    uiScaleSlider:SetPoint("LEFT", uiScaleLabel, "RIGHT", 8, 0)
+    uiScaleSlider:EnableMouse(true)
+    uiScaleSlider:SetHitRectInsets(-4, -4, -6, -6)
+
+    local uiScaleTrack = uiScaleSlider:CreateTexture(nil, "BACKGROUND")
+    uiScaleTrack:SetPoint("TOPLEFT", uiScaleSlider, "TOPLEFT", 0, -4)
+    uiScaleTrack:SetPoint("BOTTOMRIGHT", uiScaleSlider, "BOTTOMRIGHT", 0, 4)
+    uiScaleTrack:SetTexture("Interface\\Buttons\\WHITE8X8")
+    uiScaleTrack:SetVertexColor(0.18, 0.20, 0.25, 0.85)
+
+    local uiScaleFill = uiScaleSlider:CreateTexture(nil, "ARTWORK")
+    uiScaleFill:SetPoint("LEFT", uiScaleSlider, "LEFT", 0, 0)
+    uiScaleFill:SetHeight(8)
+    uiScaleFill:SetTexture("Interface\\Buttons\\WHITE8X8")
+    uiScaleFill:SetVertexColor(0.92, 0.72, 0.12, 0.9)
+
+    local uiScaleThumb = CreateFrame("Button", nil, uiScaleSlider)
+    uiScaleThumb:SetWidth(10)
+    uiScaleThumb:SetHeight(16)
+    uiScaleThumb:EnableMouse(true)
+    local thumbTex = uiScaleThumb:CreateTexture(nil, "OVERLAY")
+    thumbTex:SetAllPoints()
+    thumbTex:SetTexture("Interface\\Buttons\\WHITE8X8")
+    thumbTex:SetVertexColor(1.0, 0.95, 0.7, 0.95)
+    uiScaleThumb:SetPoint("CENTER", uiScaleSlider, "LEFT", 0, 0)
+
+    uiScaleSlider:SetScript("OnEnter", function()
+        uiScaleTrack:SetVertexColor(0.26, 0.30, 0.36, 0.95)
+    end)
+    uiScaleSlider:SetScript("OnLeave", function()
+        uiScaleTrack:SetVertexColor(0.18, 0.20, 0.25, 0.85)
+    end)
+
+    local scaleResetBtn = CreateFrame("Button", "LibramSwap_UIScaleResetBtn", controlsPanel, "UIPanelButtonTemplate")
+    scaleResetBtn:SetWidth(46); scaleResetBtn:SetHeight(18)
+    scaleResetBtn:SetPoint("LEFT", uiScaleSlider, "RIGHT", 6, 0)
+    scaleResetBtn:SetText("100%")
+
+    local scaleText = controlsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    scaleText:SetText("1.00")
+    scaleText:SetTextColor(1.0, 0.82, 0)
+
+    local scaleMinusBtn = CreateFrame("Button", "LibramSwap_UIScaleMinusBtn", controlsPanel, "UIPanelButtonTemplate")
+    scaleMinusBtn:SetWidth(18); scaleMinusBtn:SetHeight(18)
+    scaleMinusBtn:SetText("-")
+
+    local scalePlusBtn = CreateFrame("Button", "LibramSwap_UIScalePlusBtn", controlsPanel, "UIPanelButtonTemplate")
+    scalePlusBtn:SetWidth(18); scalePlusBtn:SetHeight(18)
+    scalePlusBtn:SetText("+")
+
+    local suppressUiScaleCallback = false
+
+    local function ClampScaleValue(v)
+        local n = tonumber(v) or 1.0
+        if n < 0.75 then n = 0.75 end
+        if n > 1.20 then n = 1.20 end
+        return n
+    end
+
+    local function UpdateScaleSliderVisual(v)
+        local n = ClampScaleValue(v)
+        local w = uiScaleSlider:GetWidth() or 118
+        local ratio = (n - 0.75) / 0.45
+        if ratio < 0 then ratio = 0 end
+        if ratio > 1 then ratio = 1 end
+        local fillW = math.max(1, math.floor(w * ratio + 0.5))
+        uiScaleFill:SetWidth(fillW)
+        local x = math.floor(w * ratio + 0.5)
+        uiScaleThumb:ClearAllPoints()
+        uiScaleThumb:SetPoint("CENTER", uiScaleSlider, "LEFT", x, 0)
+        uiScaleSlider._value = n
+    end
+
+    function uiScaleSlider:GetValue()
+        return ClampScaleValue(self._value)
+    end
+
+    function uiScaleSlider:SetValue(v)
+        UpdateScaleSliderVisual(v)
+    end
+
+    local sliderDragging = false
+    local function ScaleValueFromCursor()
+        local cursorX = GetCursorPosition and GetCursorPosition() or 0
+        local effectiveScale = (uiScaleSlider and uiScaleSlider.GetEffectiveScale and uiScaleSlider:GetEffectiveScale()) or 1
+        if effectiveScale == 0 then effectiveScale = 1 end
+        cursorX = cursorX / effectiveScale
+        local left = uiScaleSlider:GetLeft() or 0
+        local width = uiScaleSlider:GetWidth() or 118
+        local ratio = (cursorX - left) / width
+        if ratio < 0 then ratio = 0 end
+        if ratio > 1 then ratio = 1 end
+        local v = 0.75 + (0.45 * ratio)
+        if v < 0.75 then v = 0.75 end
+        if v > 1.20 then v = 1.20 end
+        return v
+    end
+
+    local function SetUiScale(scaleValue, saveToDB, syncSlider)
+        local scale = ClampScaleValue(scaleValue)
+
+        if syncSlider ~= false and uiScaleSlider and uiScaleSlider.SetValue then
+            suppressUiScaleCallback = true
+            uiScaleSlider:SetValue(scale)
+            suppressUiScaleCallback = false
+        end
+
+        if applyUiScale then
+            applyUiScale(scale, saveToDB)
+        else
+            if saveToDB ~= false then
+                LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+                LibramSwapDB.uiScale = scale
+            end
+            if frame and frame.SetScale then frame:SetScale(scale) end
+        end
+
+        if scaleText then scaleText:SetText(string.format("%.2f", scale)) end
+    end
 
     -- checkbox to enable/disable using the small delay
     local useDelayChk = CreateFrame("CheckButton", "LibramSwap_UseDelayChk", frame, "UICheckButtonTemplate")
@@ -144,11 +307,101 @@ else
     end)
     local useDelayLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     useDelayLabel:SetPoint("LEFT", useDelayChk, "RIGHT", 6, 0)
-    useDelayLabel:SetText("Enable delay")
+    useDelayLabel:SetText("Use delay")
+    useDelayLabel:SetTextColor(0.9, 0.95, 1.0)
+
+    -- Combat smart-cast toggles (1-key behavior in combat)
+    local combatSmartChk = CreateFrame("CheckButton", "LibramSwap_CombatSmartChk", frame, "UICheckButtonTemplate")
+    combatSmartChk:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 8, -42)
+    combatSmartChk:SetScript("OnClick", function()
+        LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+        local c = combatSmartChk:GetChecked()
+        LibramSwapDB.combatSmartMode = (c == true or c == 1) and true or false
+    end)
+    local combatSmartLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    combatSmartLabel:SetPoint("LEFT", combatSmartChk, "RIGHT", 6, 0)
+    combatSmartLabel:SetText("Smart combat cast (1 key)")
+    combatSmartLabel:SetTextColor(0.9, 0.95, 1.0)
+
+    local sameTickChk = CreateFrame("CheckButton", "LibramSwap_SameTickChk", frame, "UICheckButtonTemplate")
+    sameTickChk:SetPoint("LEFT", combatSmartLabel, "RIGHT", 16, 0)
+    sameTickChk:SetScript("OnClick", function()
+        LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+        local c = sameTickChk:GetChecked()
+        LibramSwapDB.combatSameTickAttempt = (c == true or c == 1) and true or false
+    end)
+    local sameTickLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    sameTickLabel:SetPoint("LEFT", sameTickChk, "RIGHT", 6, 0)
+    sameTickLabel:SetText("Try same-tick")
+    sameTickLabel:SetTextColor(0.9, 0.95, 1.0)
+
+    local equipRetryChk = CreateFrame("CheckButton", "LibramSwap_EquipRetryChk", frame, "UICheckButtonTemplate")
+    equipRetryChk:SetPoint("LEFT", sameTickLabel, "RIGHT", 16, 0)
+    equipRetryChk:SetScript("OnClick", function()
+        LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+        local c = equipRetryChk:GetChecked()
+        LibramSwapDB.combatEquipRetry = (c == true or c == 1) and true or false
+    end)
+    local equipRetryLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    equipRetryLabel:SetPoint("LEFT", equipRetryChk, "RIGHT", 6, 0)
+    equipRetryLabel:SetText("Retry equip")
+    equipRetryLabel:SetTextColor(0.9, 0.95, 1.0)
+
+    local presetLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    presetLabel:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 12, -68)
+    presetLabel:SetText("Combat presets:")
+    presetLabel:SetTextColor(1.0, 0.82, 0)
+
+    local presetLowBtn = CreateFrame("Button", "LibramSwap_PresetLowBtn", frame, "UIPanelButtonTemplate")
+    presetLowBtn:SetWidth(68); presetLowBtn:SetHeight(18)
+    presetLowBtn:SetPoint("LEFT", presetLabel, "RIGHT", 8, 0)
+    presetLowBtn:SetText("Low 0.02")
+
+    local presetMidBtn = CreateFrame("Button", "LibramSwap_PresetMidBtn", frame, "UIPanelButtonTemplate")
+    presetMidBtn:SetWidth(72); presetMidBtn:SetHeight(18)
+    presetMidBtn:SetPoint("LEFT", presetLowBtn, "RIGHT", 6, 0)
+    presetMidBtn:SetText("Mid 0.03")
+
+    local presetHighBtn = CreateFrame("Button", "LibramSwap_PresetHighBtn", frame, "UIPanelButtonTemplate")
+    presetHighBtn:SetWidth(74); presetHighBtn:SetHeight(18)
+    presetHighBtn:SetPoint("LEFT", presetMidBtn, "RIGHT", 6, 0)
+    presetHighBtn:SetText("High 0.04")
+
+    local function applyCombatPreset(delayValue)
+        LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+        LibramSwapDB.useDelay = true
+        LibramSwapDB.delay = delayValue
+        LibramSwapDB.combatSmartMode = true
+        LibramSwapDB.combatSameTickAttempt = true
+        LibramSwapDB.combatEquipRetry = true
+
+        if delayBox and delayBox.SetText then
+            delayBox:SetText(tostring(delayValue))
+        end
+        if useDelayChk and useDelayChk.SetChecked then useDelayChk:SetChecked(true) end
+        if combatSmartChk and combatSmartChk.SetChecked then combatSmartChk:SetChecked(true) end
+        if sameTickChk and sameTickChk.SetChecked then sameTickChk:SetChecked(true) end
+        if equipRetryChk and equipRetryChk.SetChecked then equipRetryChk:SetChecked(true) end
+    end
+
+    presetLowBtn:SetScript("OnClick", function()
+        applyCombatPreset(0.02)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Combat preset applied (Low ping: 0.02).|r")
+    end)
+
+    presetMidBtn:SetScript("OnClick", function()
+        applyCombatPreset(0.03)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Combat preset applied (Mid ping: 0.03).|r")
+    end)
+
+    presetHighBtn:SetScript("OnClick", function()
+        applyCombatPreset(0.04)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: Combat preset applied (High ping: 0.04).|r")
+    end)
 
     -- Debug toggle: persist `LibramSwapDB.debug` so user can enable logging in-game
     local debugChk = CreateFrame("CheckButton", "LibramSwap_DebugChk", frame, "UICheckButtonTemplate")
-    debugChk:SetPoint("LEFT", useDelayLabel, "RIGHT", 12, 0)
+    debugChk:SetPoint("LEFT", equipRetryLabel, "RIGHT", 14, 0)
     debugChk:SetScript("OnClick", function()
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         local c = debugChk:GetChecked()
@@ -157,6 +410,122 @@ else
     local debugLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     debugLabel:SetPoint("LEFT", debugChk, "RIGHT", 6, 0)
     debugLabel:SetText("Enable debug")
+    debugLabel:SetTextColor(1.0, 0.70, 0.35)
+
+    uiScaleSlider:SetScript("OnMouseDown", function()
+        sliderDragging = true
+        SetUiScale(ScaleValueFromCursor(), true, true)
+    end)
+    uiScaleSlider:SetScript("OnMouseUp", function()
+        sliderDragging = false
+    end)
+    uiScaleSlider:SetScript("OnUpdate", function()
+        if sliderDragging then
+            if type(IsMouseButtonDown) == "function" and not IsMouseButtonDown("LeftButton") then
+                sliderDragging = false
+                return
+            end
+            SetUiScale(ScaleValueFromCursor(), true, true)
+        end
+    end)
+
+    uiScaleThumb:SetScript("OnMouseDown", function()
+        sliderDragging = true
+        SetUiScale(ScaleValueFromCursor(), true, true)
+    end)
+    uiScaleThumb:SetScript("OnMouseUp", function()
+        sliderDragging = false
+    end)
+    uiScaleThumb:SetScript("OnHide", function()
+        sliderDragging = false
+    end)
+    uiScaleThumb:SetScript("OnLeave", function()
+        if type(IsMouseButtonDown) == "function" and not IsMouseButtonDown("LeftButton") then
+            sliderDragging = false
+        end
+    end)
+    uiScaleSlider:SetScript("OnHide", function()
+        sliderDragging = false
+    end)
+
+    scaleResetBtn:SetScript("OnClick", function()
+        SetUiScale(1.0, true, true)
+    end)
+
+    scaleMinusBtn:SetScript("OnClick", function()
+        local cur = (uiScaleSlider and uiScaleSlider.GetValue and uiScaleSlider:GetValue()) or 1.0
+        SetUiScale(cur - 0.02, true, true)
+    end)
+
+    scalePlusBtn:SetScript("OnClick", function()
+        local cur = (uiScaleSlider and uiScaleSlider.GetValue and uiScaleSlider:GetValue()) or 1.0
+        SetUiScale(cur + 0.02, true, true)
+    end)
+
+    local function relayoutTopControls()
+        local panelW = controlsPanel and controlsPanel.GetWidth and controlsPanel:GetWidth() or 680
+        local sliderW = math.max(72, math.min(112, panelW * 0.17))
+
+        delayLabel:ClearAllPoints()
+        delayLabel:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 12, -14)
+        delayBox:ClearAllPoints()
+        delayBox:SetPoint("LEFT", delayLabel, "RIGHT", 8, 0)
+        useDelayChk:ClearAllPoints()
+        useDelayChk:SetPoint("LEFT", delayBox, "RIGHT", 12, 0)
+        useDelayLabel:ClearAllPoints()
+        useDelayLabel:SetPoint("LEFT", useDelayChk, "RIGHT", 6, 0)
+
+        combatSmartChk:ClearAllPoints()
+        combatSmartChk:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 8, -42)
+        combatSmartLabel:ClearAllPoints()
+        combatSmartLabel:SetPoint("LEFT", combatSmartChk, "RIGHT", 6, 0)
+        sameTickChk:ClearAllPoints()
+        sameTickChk:SetPoint("LEFT", combatSmartLabel, "RIGHT", 16, 0)
+        sameTickLabel:ClearAllPoints()
+        sameTickLabel:SetPoint("LEFT", sameTickChk, "RIGHT", 6, 0)
+        equipRetryChk:ClearAllPoints()
+        equipRetryChk:SetPoint("LEFT", sameTickLabel, "RIGHT", 16, 0)
+        equipRetryLabel:ClearAllPoints()
+        equipRetryLabel:SetPoint("LEFT", equipRetryChk, "RIGHT", 6, 0)
+        debugChk:ClearAllPoints()
+        debugChk:SetPoint("LEFT", equipRetryLabel, "RIGHT", 14, 0)
+        debugLabel:ClearAllPoints()
+        debugLabel:SetPoint("LEFT", debugChk, "RIGHT", 6, 0)
+
+        presetLabel:ClearAllPoints()
+        presetLabel:SetPoint("TOPLEFT", controlsPanel, "TOPLEFT", 12, -72)
+        presetLowBtn:ClearAllPoints()
+        presetLowBtn:SetPoint("LEFT", presetLabel, "RIGHT", 8, 0)
+        presetMidBtn:ClearAllPoints()
+        presetMidBtn:SetPoint("LEFT", presetLowBtn, "RIGHT", 6, 0)
+        presetHighBtn:ClearAllPoints()
+        presetHighBtn:SetPoint("LEFT", presetMidBtn, "RIGHT", 6, 0)
+
+        scaleResetBtn:ClearAllPoints()
+        scaleResetBtn:SetPoint("TOPRIGHT", controlsPanel, "TOPRIGHT", -10, -12)
+        scalePlusBtn:ClearAllPoints()
+        scalePlusBtn:SetPoint("RIGHT", scaleResetBtn, "LEFT", -4, 0)
+        uiScaleSlider:ClearAllPoints()
+        uiScaleSlider:SetPoint("RIGHT", scalePlusBtn, "LEFT", -4, 0)
+        uiScaleSlider:SetWidth(math.max(64, math.min(92, sliderW)))
+        scaleMinusBtn:ClearAllPoints()
+        scaleMinusBtn:SetPoint("RIGHT", uiScaleSlider, "LEFT", -4, 0)
+        scaleText:ClearAllPoints()
+        scaleText:SetPoint("RIGHT", scaleMinusBtn, "LEFT", -6, 0)
+        uiScaleLabel:ClearAllPoints()
+        uiScaleLabel:SetPoint("RIGHT", scaleText, "LEFT", -8, 0)
+
+        uiScaleTrack:ClearAllPoints()
+        uiScaleTrack:SetPoint("TOPLEFT", uiScaleSlider, "TOPLEFT", 0, -4)
+        uiScaleTrack:SetPoint("BOTTOMRIGHT", uiScaleSlider, "BOTTOMRIGHT", 0, 4)
+
+        if scaleText then
+            scaleText:SetText(string.format("%.2f", uiScaleSlider:GetValue() or 1.0))
+        end
+        UpdateScaleSliderVisual(uiScaleSlider:GetValue() or 1.0)
+    end
+
+    relayoutTopControls()
 
     -- Slash command handler for quick debug toggle: /libramdebug on|off
     SlashCmdList["LIBRAMDEBUG"] = function(msg)
@@ -175,6 +544,22 @@ else
         end
     end
 
+    SlashCmdList["SSIKASCALE"] = function(msg)
+        local raw = string.lower(tostring(msg or ""))
+        local v = tonumber(raw)
+        if raw == "" or raw == "reset" or raw == "default" then
+            v = 1.0
+        end
+        if not v then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[ShikaSwap]: Usage: /ssscale 0.75-1.20 (or /ssscale reset)|r")
+            return
+        end
+        if v < 0.75 then v = 0.75 end
+        if v > 1.20 then v = 1.20 end
+        SetUiScale(v, true, true)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF88FF88[ShikaSwap]: UI scale set to "..string.format("%.2f", v)..".|r")
+    end
+
     -- Slash command to check which profile is currently active
     SlashCmdList["SSIKAPROFILE"] = function()
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
@@ -189,7 +574,7 @@ else
     local defaultSpells = {
         "Holy Light","Flash of Light","Holy Strike","Seal of Righteousness","Seal of the Crusader","Cleanse","Blessing of Wisdom","Blessing of Might",
         "Greater Blessing of Light","Hammer of Justice","Greater Blessing of Sanctuary","Consecration",
-        "Seal of Wisdom","Judgement","Greater Blessing of Wisdom","Devotion Aura","Blessing of Salvation","Blessing of Kings",
+        "Seal of Wisdom","Judgement","Holy Shock","Greater Blessing of Wisdom","Devotion Aura","Blessing of Salvation","Blessing of Kings",
         "Holy Shield","Hand of Freedom"
     }
     -- Start with EMPTY spell list - user adds spells via Sorts Manager
@@ -204,7 +589,8 @@ else
         "Libram of the Faithful","Libram of the Farraki Zealot","Libram of Radiance","Libram of Light",
         "Libram of Grace","Libram of the Dreamguard","Libram of the Justicar","Libram of the Resolute",
         "Libram of the Eternal Tower","Libram of Final Judgement","Libram of Hope","Libram of Fervor",
-        "Libram of Truth","Libram of Veracity","Libram of Divinity"
+        "Libram of Truth","Libram of Veracity","Libram of Divinity",
+        "Libram of the Radiant Dawn","Libram of Ardour","Libram of Hallowed Ground"
     }
 
     -- Backdrop that closes the picker when clicking outside
@@ -335,7 +721,7 @@ else
     
     -- Forward declarations for frames and functions created later
     local sortsFrame, profileFrame
-    local rebuildSpellList, refreshProfiles, updateActiveProfileLabel
+    local rebuildSpellList, refreshProfiles, updateActiveProfileLabel, refreshSortsList
 
     -- Profiles UI: small popup to manage named profiles
     LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
@@ -379,6 +765,9 @@ else
                     if type(payload.enabledMap) ~= "table" then payload.enabledMap = {} end
                     if type(payload.delay) ~= "number" then payload.delay = nil end
                     if payload.useDelay ~= true then payload.useDelay = false end
+                    payload.combatSmartMode = (payload.combatSmartMode ~= false)
+                    payload.combatSameTickAttempt = (payload.combatSameTickAttempt ~= false)
+                    payload.combatEquipRetry = (payload.combatEquipRetry ~= false)
                     if type(payload.consecrationMode) ~= "string" then payload.consecrationMode = nil end
                 end
             end
@@ -398,16 +787,17 @@ else
     -- sanitize immediately so UI actions (save/load) don't index corrupted savedvariables
     sanitizeProfiles()
 
-    local profileFrame = CreateFrame("Frame", "LibramSwap_ProfileFrame", UIParent)
-    profileFrame:SetWidth(420)
-    profileFrame:SetHeight(300)
+    profileFrame = CreateFrame("Frame", "LibramSwap_ProfileFrame", UIParent)
+    profileFrame:SetWidth(390)
+    profileFrame:SetHeight(280)
     profileFrame:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 8, insets = {left=6,right=6,top=6,bottom=6}})
-    profileFrame:SetBackdropColor(0,0,0,0.95)
+    profileFrame:SetBackdropColor(0.04, 0.04, 0.12, 0.95)
     profileFrame:SetFrameStrata("DIALOG")
     profileFrame:Hide()
     -- make the profile popup movable and keep it on-screen
     profileFrame:SetMovable(true)
     profileFrame:EnableMouse(true)
+    AttachResizeHandle(profileFrame, 360, 250, 900, 760)
     profileFrame:RegisterForDrag("LeftButton")
     profileFrame:SetScript("OnDragStart", function() profileFrame:StartMoving() end)
     profileFrame:SetScript("OnDragStop", function()
@@ -432,6 +822,7 @@ else
     local pfTitle = profileFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     pfTitle:SetPoint("TOP", profileFrame, "TOP", 0, -10)
     pfTitle:SetText("ShikaSwap Profiles")
+    pfTitle:SetTextColor(0.55, 0.80, 1.0)
 
     local nameLabel = profileFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameLabel:SetPoint("TOPLEFT", profileFrame, "TOPLEFT", 12, -40)
@@ -561,7 +952,8 @@ else
                     local pname = tostring(name)
                 i = i + 1
                 local btn = CreateFrame("Button", nil, pContent, "UIPanelButtonTemplate")
-                btn:SetHeight(18); btn:SetWidth(200)
+                local dynamicW = math.max(180, (profileFrame:GetWidth() or 420) - 92)
+                btn:SetHeight(18); btn:SetWidth(dynamicW)
                 btn:SetPoint("TOPLEFT", pContent, "TOPLEFT", 0, -((i-1)*20) -4)
                 -- highlight texture (hidden by default)
                 btn.hl = btn:CreateTexture(nil, "OVERLAY")
@@ -617,6 +1009,12 @@ else
         end
     end
 
+    profileFrame:SetScript("OnSizeChanged", function()
+        if type(refreshProfiles) == "function" and profileFrame:IsShown() then
+            refreshProfiles()
+        end
+    end)
+
     updateActiveProfileLabel = function()
         LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
         local cur = (type(LibramSwapDB.selectedProfile) == "string") and LibramSwapDB.selectedProfile or ((type(LibramSwapDB.lastUsedProfile) == "string") and LibramSwapDB.lastUsedProfile or nil)
@@ -653,6 +1051,9 @@ else
         payload.spells = (type(db.spells) == "table") and deepCopy(db.spells) or {}
         payload.delay = (type(db.delay) == "number") and db.delay or nil
         payload.useDelay = (db.useDelay == true) and true or false
+        payload.combatSmartMode = (db.combatSmartMode ~= false)
+        payload.combatSameTickAttempt = (db.combatSameTickAttempt ~= false)
+        payload.combatEquipRetry = (db.combatEquipRetry ~= false)
         payload.consecrationMode = (type(db.consecrationMode) == "string") and db.consecrationMode or nil
         -- write back safely
         if type(profiles) ~= "table" then profiles = {} end
@@ -686,6 +1087,9 @@ else
         payload.spells = deepCopy((type(db.spells) == "table") and db.spells or {})
         payload.delay = (type(db.delay) == "number") and db.delay or nil
         payload.useDelay = (db.useDelay == true) and true or false
+        payload.combatSmartMode = (db.combatSmartMode ~= false)
+        payload.combatSameTickAttempt = (db.combatSameTickAttempt ~= false)
+        payload.combatEquipRetry = (db.combatEquipRetry ~= false)
         payload.consecrationMode = (type(db.consecrationMode) == "string") and db.consecrationMode or nil
 
         db.profiles = db.profiles or {}
@@ -773,6 +1177,9 @@ else
         LibramSwapDB.spells = deepCopy((type(payload.spells) == "table") and payload.spells or {})
         LibramSwapDB.delay = (type(payload.delay) == "number") and payload.delay or nil
         LibramSwapDB.useDelay = (payload.useDelay == true) and true or false
+        LibramSwapDB.combatSmartMode = (payload.combatSmartMode ~= false)
+        LibramSwapDB.combatSameTickAttempt = (payload.combatSameTickAttempt ~= false)
+        LibramSwapDB.combatEquipRetry = (payload.combatEquipRetry ~= false)
         LibramSwapDB.consecrationMode = (type(payload.consecrationMode) == "string") and payload.consecrationMode or nil
         
         -- Debug: show what mappings were loaded
@@ -930,6 +1337,9 @@ else
             payload.spells = deepCopy((type(db.spells) == "table") and db.spells or {})
             payload.delay = db.delay
             payload.useDelay = db.useDelay
+            payload.combatSmartMode = db.combatSmartMode
+            payload.combatSameTickAttempt = db.combatSameTickAttempt
+            payload.combatEquipRetry = db.combatEquipRetry
             payload.consecrationMode = db.consecrationMode
             profiles[name] = payload
             db.profiles = profiles
@@ -981,6 +1391,22 @@ else
     }
 
     -- open/close profile popup (centered by default; user can drag to reposition)
+    applyUiScale = function(rawScale, saveToDB)
+        local scale = tonumber(rawScale) or 1.0
+        if scale < 0.75 then scale = 0.75 end
+        if scale > 1.20 then scale = 1.20 end
+
+        if saveToDB ~= false then
+            LibramSwapDB = (type(LibramSwapDB) == "table") and LibramSwapDB or {}
+            LibramSwapDB.uiScale = scale
+        end
+
+        if frame and frame.SetScale then frame:SetScale(scale) end
+        if profileFrame and profileFrame.SetScale then profileFrame:SetScale(scale) end
+        if sortsFrame and sortsFrame.SetScale then sortsFrame:SetScale(scale) end
+        if picker and picker.SetScale then picker:SetScale(scale) end
+    end
+
     local function ShowProfilePopup()
         pickerBackdrop:Show()
         profileFrame:ClearAllPoints()
@@ -992,6 +1418,10 @@ else
             profileFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         end
         profileFrame:Show()
+        if type(LibramSwapDB) == "table" and type(SetUiScale) == "function" then
+            SetUiScale(LibramSwapDB.uiScale or 1.0, false, true)
+            if profileFrame.SetScale then profileFrame:SetScale(LibramSwapDB.uiScale or 1.0) end
+        end
         refreshProfiles()
     end
 
@@ -999,13 +1429,14 @@ else
     if mainSaveBtn then mainSaveBtn:SetScript("OnClick", function() ShowProfilePopup() end) end
 
     -- Build a simple Sorts panel with search + add/remove functionality
-    local sortsFrame = CreateFrame("Frame", "LibramSwap_SortsFrame", UIParent)
-    sortsFrame:SetWidth(520); sortsFrame:SetHeight(480)
+    sortsFrame = CreateFrame("Frame", "LibramSwap_SortsFrame", UIParent)
+    sortsFrame:SetWidth(500); sortsFrame:SetHeight(430)
     sortsFrame:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 8, insets = {left=6,right=6,top=6,bottom=6}})
-    sortsFrame:SetBackdropColor(0,0,0,0.95)
+    sortsFrame:SetBackdropColor(0.03, 0.07, 0.04, 0.95)
     sortsFrame:SetFrameStrata("DIALOG")
     sortsFrame:Hide()
     sortsFrame:SetMovable(true); sortsFrame:EnableMouse(true)
+    AttachResizeHandle(sortsFrame, 420, 300, 980, 860)
     sortsFrame:RegisterForDrag("LeftButton")
     sortsFrame:SetScript("OnDragStart", function() sortsFrame:StartMoving() end)
     sortsFrame:SetScript("OnDragStop", function()
@@ -1045,7 +1476,7 @@ else
         return false
     end
 
-    local function refreshSortsList()
+    refreshSortsList = function()
         pcall(function()
             if sortsContent and sortsContent.GetChildren then
                 for _, c in ipairs({sortsContent:GetChildren()}) do if c and type(c.Hide) == "function" then c:Hide(); if c.SetParent then c:SetParent(nil) end end end
@@ -1064,7 +1495,8 @@ else
                 idx = idx + 1
                 local y = -8 - (idx-1) * 22
                 local btn = CreateFrame("Button", nil, sortsContent, "UIPanelButtonTemplate")
-                btn:SetHeight(20); btn:SetWidth(220)
+                local dynamicW = math.max(220, (sortsFrame:GetWidth() or 520) - 84)
+                btn:SetHeight(20); btn:SetWidth(dynamicW)
                 btn:SetPoint("TOPLEFT", sortsContent, "TOPLEFT", 8, y)
                 btn:SetText(n)
                 btn:SetScript("OnClick", function()
@@ -1112,6 +1544,12 @@ else
         sortsContent:SetHeight(math.max(140, idx * 22 + 8))
     end
 
+    sortsFrame:SetScript("OnSizeChanged", function()
+        if type(refreshSortsList) == "function" and sortsFrame:IsShown() then
+            refreshSortsList()
+        end
+    end)
+
     searchBox:SetScript("OnTextChanged", function() refreshSortsList() end)
 
     local function ShowSortsPopup()
@@ -1124,6 +1562,10 @@ else
             sortsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         end
         sortsFrame:Show()
+        if type(LibramSwapDB) == "table" and type(SetUiScale) == "function" then
+            SetUiScale(LibramSwapDB.uiScale or 1.0, false, true)
+            if sortsFrame.SetScale then sortsFrame:SetScale(LibramSwapDB.uiScale or 1.0) end
+        end
         refreshSortsList()
     end
     if mainSortBtn then mainSortBtn:SetScript("OnClick", function() ShowSortsPopup() end) end
@@ -1211,7 +1653,8 @@ else
 
             local dname = "LibramSwap_Btn_" .. string.gsub(spell, "%s+", "")
             local btn = CreateFrame("Button", dname, content, "UIPanelButtonTemplate")
-            btn:SetWidth(200)
+            local dynamicBtnW = math.max(160, (frame:GetWidth() or 720) - 380)
+            btn:SetWidth(dynamicBtnW)
             btn:SetHeight(24)
             btn:SetPoint("LEFT", lbl, "RIGHT", 12, -4)
             btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1226,12 +1669,28 @@ else
             
             dropdowns[s] = btn
 
+            local rowBg = content:CreateTexture(nil, "BACKGROUND")
+            rowBg:SetPoint("TOPLEFT", content, "TOPLEFT", 10, y + 6)
+            rowBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -10, y + 6)
+            rowBg:SetHeight(24)
+            rowBg:SetTexture("Interface\\Buttons\\WHITE8X8")
+            if math.mod(visibleRow, 2) == 0 then
+                rowBg:SetVertexColor(0.07, 0.08, 0.12, 0.20)
+            else
+                rowBg:SetVertexColor(0.05, 0.06, 0.10, 0.14)
+            end
+
             local ind = CreateFrame("Frame", nil, content)
             ind:SetPoint("LEFT", btn, "RIGHT", 12, 0)
-            ind:SetWidth(12)
-            ind:SetHeight(12)
+            ind:SetWidth(14)
+            ind:SetHeight(14)
+            if ind.SetBackdrop then
+                ind:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 8, insets = {left=2,right=2,top=2,bottom=2}})
+                ind:SetBackdropColor(0, 0, 0, 0.85)
+            end
             ind.tex = ind:CreateTexture(nil, "OVERLAY")
-            ind.tex:SetAllPoints()
+            ind.tex:SetPoint("TOPLEFT", ind, "TOPLEFT", 2, -2)
+            ind.tex:SetPoint("BOTTOMRIGHT", ind, "BOTTOMRIGHT", -2, 2)
             -- Initialize indicator color based on item presence
             local present = false
             if mapped and mapped ~= "None" and LibramSwap_HasItem then present = LibramSwap_HasItem(mapped) end
@@ -1262,6 +1721,16 @@ else
 
     -- initial build
     rebuildSpellList()
+
+    frame:SetScript("OnSizeChanged", function()
+        if header and header.SetWidth then header:SetWidth(frame:GetWidth()) end
+        if type(relayoutTopControls) == "function" then
+            relayoutTopControls()
+        end
+        if type(rebuildSpellList) == "function" and frame:IsShown() then
+            rebuildSpellList()
+        end
+    end)
 
     -- enable mouse-wheel scrolling on the ScrollFrame (Classic-compatible)
     scroll:EnableMouseWheel(true)
@@ -1299,6 +1768,11 @@ else
         if type(LibramSwapDB.map) ~= "table" then LibramSwapDB.map = {} end
         if type(LibramSwapDB.enabledMap) ~= "table" then LibramSwapDB.enabledMap = {} end
         if type(LibramSwapDB.profiles) ~= "table" then LibramSwapDB.profiles = {} end
+        if LibramSwapDB.useDelay == nil then LibramSwapDB.useDelay = true end
+        if LibramSwapDB.combatSmartMode == nil then LibramSwapDB.combatSmartMode = true end
+        if LibramSwapDB.combatSameTickAttempt == nil then LibramSwapDB.combatSameTickAttempt = true end
+        if LibramSwapDB.combatEquipRetry == nil then LibramSwapDB.combatEquipRetry = true end
+        if type(LibramSwapDB.uiScale) ~= "number" then LibramSwapDB.uiScale = 1.0 end
         -- initialize delay controls
         if useDelayChk then
             if type(LibramSwapDB) == "table" and LibramSwapDB.useDelay then useDelayChk:SetChecked(true) else useDelayChk:SetChecked(false) end
@@ -1306,9 +1780,27 @@ else
         if delayBox then
             delayBox:SetText(tostring(((type(LibramSwapDB) == "table") and LibramSwapDB.delay) or 0.02))
         end
+        if combatSmartChk then
+            if LibramSwapDB.combatSmartMode ~= false then combatSmartChk:SetChecked(true) else combatSmartChk:SetChecked(false) end
+        end
+        if sameTickChk then
+            if LibramSwapDB.combatSameTickAttempt ~= false then sameTickChk:SetChecked(true) else sameTickChk:SetChecked(false) end
+        end
+        if equipRetryChk then
+            if LibramSwapDB.combatEquipRetry ~= false then equipRetryChk:SetChecked(true) else equipRetryChk:SetChecked(false) end
+        end
         -- initialize debug checkbox and local DEBUG flag
         if type(debugChk) == "table" and type(debugChk.SetChecked) == "function" then
             if type(LibramSwapDB) == "table" and LibramSwapDB.debug then debugChk:SetChecked(true) else debugChk:SetChecked(false) end
+        end
+        if type(relayoutTopControls) == "function" then
+            relayoutTopControls()
+        end
+        if uiScaleSlider then
+            local s = tonumber(LibramSwapDB.uiScale) or 1.0
+            if s < 0.75 then s = 0.75 end
+            if s > 1.20 then s = 1.20 end
+            SetUiScale(s, false, true)
         end
         DEBUG = (type(LibramSwapDB) == "table" and LibramSwapDB.debug) or false
         -- update active profile label when the config window is shown

@@ -7,6 +7,7 @@
 ## 📋 Features
 
 - ✅ **Automatic libram swapping** before casting spells
+- ✅ **GCD-aware combat casting** (auto deferred cast after swap when needed)
 - ✅ **Profile system** to save different configurations
 - ✅ **Spell management** via Sorts Manager (Add/Remove)
 - ✅ **Visual indicators** (green = libram in bags, red = missing)
@@ -26,11 +27,10 @@
 | Command | Description |
 |---------|-------------|
 | `/ss` | Open/close the configuration menu |
-| `/shikaswap` | Toggle addon on/off |
-| `/ssikaprofile` | Show currently active profile |
-| `/ssikadebug on/off` | Enable/disable debug messages |
-| `/swaplibram <Spell>` | Manual swap test for a spell |
-| `/equiplibram <Name>` | Manually equip a libram |
+| `/shikaconfig` | Alternate command to open/close the configuration menu |
+| `/ssikaprofile` | Show the currently selected profile and configured spell count |
+
+> Debug output can be enabled from the configuration window. Manual test commands are not exposed as slash commands in the current addon build.
 
 ## 📖 Usage Guide
 
@@ -127,8 +127,12 @@ The game client doesn't always provide the spell rank when you cast directly fro
 - Adjust the delay between libram swap and spell cast
 - Recommended value: **0.02 seconds**
 
+### GCD Behavior
+- In combat, if the libram swap and cast cannot happen safely in the same instant, ShikaSwap queues a short deferred cast
+- This helps the spell fire right after swap/GCD timing without requiring extra key presses
+
 ### Debug
-- Enable to see all detailed messages in chat
+- Enable it from the configuration window to see detailed messages in chat
 - Useful for troubleshooting
 
 ## 🎯 Supported Spells
@@ -187,6 +191,8 @@ A: Configure spells for one role, save the profile with a name (e.g., "Heal"). C
 ## 👨‍💻 Development
 
 This project is open-source. Contributions are welcome!
+
+There is no build pipeline for this addon. Validate changes in-game by reloading the UI with `/reload` and then exercising the affected configuration or spell flow.
 
 ### File Structure
 - `LibramSwap_fixed.lua` : Main swap logic
